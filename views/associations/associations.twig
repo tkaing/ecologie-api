@@ -17,7 +17,12 @@
 					<th>Identifier</th>
 					<th>@-mail</th>
 					<th>Nom</th>
-					<th>Identifiant</th>
+                    <th>Date de creation</th>
+					<th>Code National</th>
+                    <th>Telephone</th>
+                    <th>Longitude</th>
+                    <th>Latitude</th>
+                    <th>Date de souscription</th>
 				</tr>
 
 			    {% for association in associations %}
@@ -25,7 +30,12 @@
 						<td>{{ association._id }}</td>
 						<td>{{ association.email }}</td>
 						<td>{{ association.name }}</td>
+                        <td>{{ association.birthdate }}</td>
 						<td>{{ association.identifier }}</td>
+                        <td>{{ association.phone }}</td>
+                        <td>{{ association.addressLongitude }}</td>
+                        <td>{{ association.addressLatitude }}</td>
+                        <td>{{ association.createdAt }}</td>
 					</tr>
 			    {% endfor %}
 		    </table>

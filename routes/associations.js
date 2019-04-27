@@ -22,8 +22,24 @@ router.put('/', [
 	check('name')
 		.not().isEmpty()
 		.withMessage("Ce champ ne peut pas rester vide."), 
+			// name
+	check('birthdate')
+	.not().isEmpty()
+	.withMessage("Ce champ ne peut pas rester vide."), 
 	// identifier (national id)
 	check('identifier')
+		.not().isEmpty()
+		.withMessage("Ce champ ne peut pas rester vide."), 
+	// email
+	check('phone')
+		.not().isEmpty()
+		.withMessage("Ceci n'est pas une adresse email valide."),
+	// name
+	check('addressLongitude')
+		.not().isEmpty()
+		.withMessage("Ce champ ne peut pas rester vide."), 
+	// identifier (national id)
+	check('addressLatitude')
 		.not().isEmpty()
 		.withMessage("Ce champ ne peut pas rester vide."), 
 
@@ -51,14 +67,14 @@ router.put('/', [
 		var association = {
 			email: data.email,
 			name: data.name,
-			identifier: data.identifier
+			birthdate: data.birthdate,
+			identifier: data.identifier,
+			phone:data.phone,
+			addressLongitude: data.addressLongitude,
+			addressLatitude: data.addressLatitude,
+			createdAt: dateNow()
 		};
 		
-		// Values to add
-		// association.phone
-		// association.addressLongitude
-		// association.addressLatitude
-		// usassociationer.createdAt
 
 		// Insert Association
 		await col.insertOne(association);
@@ -155,6 +171,24 @@ router.delete('/:id', async function(request, response) {
 			.json({ stacktrace: e.stack });
 	}
 });
+function formatDigits(number){
+    if(number < 10) {
+        number = ('0' + number);
+    }
+    return number;
+}
+function dateNow(){
+    var dateNow = new Date();
+    var day = dateNow.getDate();
+    var month = dateNow.getMonth();
+    var year = dateNow.getFullYear();
+    var hour = dateNow.getHours();
+    var minutes = dateNow.getMinutes();
+    var seconds = dateNow.getSeconds();
+    month += 1;
+    const dateFormatted = formatDigits(day) + '/' + formatDigits(month) + '/' + year + ' ' + formatDigits(hour) + ':' + formatDigits(minutes) + ':' + formatDigits(seconds);
+    return dateFormatted;
+}
 
 
 
