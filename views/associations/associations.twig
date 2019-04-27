@@ -1,0 +1,37 @@
+{% extends 'layout.twig' %}
+
+{% block stylesheet %}
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+{% endblock %}
+
+{% block body %}
+
+    <h1>ecologie-api</h1>
+
+    <div class="row">
+    	<div class="col"></div>
+
+		<div class="col-8">
+			<table class="table">
+				<tr>
+					<th>Identifier</th>
+					<th>@-mail</th>
+					<th>Nom</th>
+					<th>Identifiant</th>
+				</tr>
+
+			    {% for association in associations %}
+			    	<tr>
+						<td>{{ association._id }}</td>
+						<td>{{ association.email }}</td>
+						<td>{{ association.name }}</td>
+						<td>{{ association.identifier }}</td>
+					</tr>
+			    {% endfor %}
+		    </table>
+		</div>
+
+    	<div class="col"></div>
+    </div>
+
+{% endblock %}
