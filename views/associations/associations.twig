@@ -29,11 +29,11 @@
 						<td>{{ association._id }}</td>
 						<td>{{ association.email }}</td>
 						<td>{{ association.name }}</td>
-                        <td>{{ (association.birthdate/1000)|date('d/m/j') }}</td>
+                        <td>{{ (association.birthdate/1000)|date('d/m/Y') }}</td>
 						<td>{{ association.identifier }}</td>
                         <td>{{ association.phone }}</td>
                         <td>{{ association.location }}</td>
-                        <td>{{ association.createdAt }}</td>
+                        <td>{{ (association.createdAt/1000)|date('d/m/Y')  }}</td>
 					</tr>
 			    {% endfor %}
 		    </table>

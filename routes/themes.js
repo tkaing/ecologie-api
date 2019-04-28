@@ -1,6 +1,6 @@
 var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'associations';
+var MONGODB_COLLEC = 'themes';
 
 var { check, validationResult } = require('express-validator/check');
 var MongoClient = require('mongodb').MongoClient;
@@ -9,34 +9,16 @@ var express = require('express');
 var router = express.Router();
 
 /**
- * @PUT | CREATE Association
+ * @PUT | CREATE theme
  *
- * @Route("/associations")
+ * @Route("/themes")
  */
 router.put('/', [
-	// email
-	check('email')
-		.isEmail()
-		.withMessage("Ceci n'est pas une adresse valide."),
 	// name
 	check('name')
 		.not().isEmpty()
 		.withMessage("Ce champ ne peut pas rester vide."), 
-	// birthdate
-	check('birthdate','ce champ doit être un timestamp')
-		.custom((value)=>(new Date(parseInt(value))).getTime() > 0), 
-	// identifier (national id)
-	check('identifier')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
-	// phone
-	check('phone')
-		.not().isEmpty()
-		.withMessage("Ceci n'est pas une adresse email valide."),
-	// location
-	check('location', 'Ce champ doit être une paire latitude/longitude.')
-		.isLatLong(),
-	
+
 
 ], async function(request, response) {
 
@@ -58,29 +40,24 @@ router.put('/', [
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 		
-		//Prepare Association Resources
+		//Prepare theme Resources
 		var birthdate = new Date(parseInt(data.birthdate));
 
-		// Build Association
-		var association = {
-			email: data.email,
+		// Build theme
+		var theme = {
 			name: data.name,
-			birthdate: birthdate.getTime(),
-			identifier: data.identifier,
-			phone: data.phone,
-			location: data.location,
 			createdAt: Date.now()
 		};
 
-		// Insert Association
-		await col.insertOne(association);
+		// Insert theme
+		await col.insertOne(theme);
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.json({ association: association });
+			.json({ theme: theme });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -92,9 +69,9 @@ router.put('/', [
 
 
 /**
- * @GET | READ Association
+ * @GET | READ theme
  *
- * @Route("/associations")
+ * @Route("/themes")
  */
 router.get('/', async function(request, response) {
   
@@ -107,15 +84,15 @@ router.get('/', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find All Associations
-		var associations = await col.find().toArray();
+		// Find All themes
+		var themes = await col.find().toArray();
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.render('associations/associations', { associations: associations });
+			.render('themes/themes', { themes: themes });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -126,9 +103,9 @@ router.get('/', async function(request, response) {
 });
 
 /**
- * @DELETE | DELETE Association
+ * @DELETE | DELETE theme
  *
- * @Route("/associations/:id")
+ * @Route("/themes/:id")
  */
 router.delete('/:id', async function(request, response) {
 
@@ -144,13 +121,13 @@ router.delete('/:id', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find Association
-		var association = await col.findOne({ _id: ObjectId(id) });
-		if (association === null)
+		// Find theme
+		var theme = await col.findOne({ _id: ObjectId(id) });
+		if (theme === null)
 			return response.status(422)
-				.json({ message: "Association introuvable" });
+				.json({ message: "theme introuvable" });
 
-		// Delete Association
+		// Delete theme
 		await col.deleteOne({ _id: ObjectId(id) });
 
 		// Close Connection
@@ -158,7 +135,7 @@ router.delete('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-				.json({ message: "Une Association a été supprimé" });
+				.json({ message: "Un theme a été supprimé" });
 
 	} catch (e) {
 		// This will eventually be handled
