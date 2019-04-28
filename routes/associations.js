@@ -15,24 +15,20 @@ var router = express.Router();
  */
 router.put('/', [
 	// email
-	check('email')
-		.isEmail()
-		.withMessage("Ceci n'est pas une adresse valide."),
+	check('email', "Ceci n'est pas une adresse valide.")
+		.isEmail(),
 	// name
-	check('name')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
+	check('name', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
 	// birthdate
-	check('birthdate','ce champ doit être un timestamp')
-		.custom((value)=>(new Date(parseInt(value))).getTime() > 0), 
+	check('birthdate', 'ce champ doit être un timestamp')
+		.custom((value) => (new Date(parseInt(value))).getTime() > 0), 
 	// identifier (national id)
-	check('identifier')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
+	check('identifier', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
 	// phone
-	check('phone')
-		.not().isEmpty()
-		.withMessage("Ceci n'est pas une adresse email valide."),
+	check('phone', "Ceci n'est pas une adresse email valide.")
+		.not().isEmpty(),
 	// location
 	check('location', 'Ce champ doit être une paire latitude/longitude.')
 		.isLatLong(),

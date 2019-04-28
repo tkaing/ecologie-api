@@ -1,35 +1,34 @@
 {% extends 'layout.twig' %}
 
 {% block stylesheet %}
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+	<link rel='stylesheet' href='/stylesheets/style.css' />
 {% endblock %}
 
 {% block body %}
 
-    <h1>ecologie-api</h1>
+	<h1>ecologie-api</h1>
 
-    <div class="row">
-    	<div class="col"></div>
+	<div class="row">
+		<div class="col"></div>
 
 		<div class="col-8">
 			<table class="table">
 				<tr>
 					<th>Identifier</th>
 					<th>Nom</th>
-                    <th>Date de création<th>
+				<th>Date de création<th>
 				</tr>
-
-			    {% for theme in themes %}
-			    	<tr>
+				{% for theme in themes %}
+				<tr>
 						<td>{{ theme._id }}</td>
 						<td>{{ theme.name }}</td>
-                        <td>{{ (theme.createdAt/1000)|date('d/m/Y')  }}</td>
+						<td>{{ (theme.createdAt/1000)|date('d/m/Y') }}</td>
 					</tr>
-			    {% endfor %}
-		    </table>
+				{% endfor %}
+			</table>
 		</div>
 
-    	<div class="col"></div>
-    </div>
+		<div class="col"></div>
+	</div>
 
 {% endblock %}

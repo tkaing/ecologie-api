@@ -15,10 +15,8 @@ var router = express.Router();
  */
 router.put('/', [
 	// name
-	check('name')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
-
+	check('name', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
 
 ], async function(request, response) {
 
@@ -40,7 +38,7 @@ router.put('/', [
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 		
-		//Prepare theme Resources
+		// Prepare theme Resources
 		var birthdate = new Date(parseInt(data.birthdate));
 
 		// Build theme

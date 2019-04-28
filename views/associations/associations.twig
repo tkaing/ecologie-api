@@ -1,15 +1,15 @@
 {% extends 'layout.twig' %}
 
 {% block stylesheet %}
-    <link rel='stylesheet' href='/stylesheets/style.css' />
+	<link rel='stylesheet' href='/stylesheets/style.css' />
 {% endblock %}
 
 {% block body %}
 
-    <h1>ecologie-api</h1>
+	<h1>ecologie-api</h1>
 
-    <div class="row">
-    	<div class="col"></div>
+	<div class="row">
+		<div class="col"></div>
 
 		<div class="col-8">
 			<table class="table">
@@ -17,29 +17,29 @@
 					<th>Identifier</th>
 					<th>@-mail</th>
 					<th>Nom</th>
-                    <th>Date de creation</th>
+					<th>Date de creation</th>
 					<th>Code National</th>
-                    <th>Telephone</th>
-                    <th>Localisation</th>
-                    <th>Date de souscription</th>
+					<th>Telephone</th>
+					<th>Localisation</th>
+					<th>Date de souscription</th>
 				</tr>
 
-			    {% for association in associations %}
-			    	<tr>
+				{% for association in associations %}
+					<tr>
 						<td>{{ association._id }}</td>
 						<td>{{ association.email }}</td>
 						<td>{{ association.name }}</td>
-                        <td>{{ (association.birthdate/1000)|date('d/m/Y') }}</td>
+						<td>{{ (association.birthdate/1000)|date('d/m/Y') }}</td>
 						<td>{{ association.identifier }}</td>
-                        <td>{{ association.phone }}</td>
-                        <td>{{ association.location }}</td>
-                        <td>{{ (association.createdAt/1000)|date('d/m/Y')  }}</td>
+						<td>{{ association.phone }}</td>
+						<td>{{ association.location }}</td>
+						<td>{{ (association.createdAt/1000)|date('d/m/Y')  }}</td>
 					</tr>
-			    {% endfor %}
-		    </table>
+				{% endfor %}
+			</table>
 		</div>
 
-    	<div class="col"></div>
-    </div>
+		<div class="col"></div>
+	</div>
 
 {% endblock %}
