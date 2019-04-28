@@ -20,8 +20,7 @@
                     <th>Date de creation</th>
 					<th>Code National</th>
                     <th>Telephone</th>
-                    <th>Longitude</th>
-                    <th>Latitude</th>
+                    <th>Localisation</th>
                     <th>Date de souscription</th>
 				</tr>
 
@@ -30,11 +29,10 @@
 						<td>{{ association._id }}</td>
 						<td>{{ association.email }}</td>
 						<td>{{ association.name }}</td>
-                        <td>{{ association.birthdate }}</td>
+                        <td>{{ (association.birthdate/1000)|date('d/m/j') }}</td>
 						<td>{{ association.identifier }}</td>
                         <td>{{ association.phone }}</td>
-                        <td>{{ association.addressLongitude }}</td>
-                        <td>{{ association.addressLatitude }}</td>
+                        <td>{{ association.location }}</td>
                         <td>{{ association.createdAt }}</td>
 					</tr>
 			    {% endfor %}
