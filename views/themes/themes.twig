@@ -16,10 +16,10 @@
 				<tr>
 					<th>Identifier</th>
 					<th>Nom</th>
-				<th>Date de création<th>
+					<th>Date de création<th>
 				</tr>
 				{% for theme in themes %}
-				<tr>
+					<tr>
 						<td>{{ theme._id }}</td>
 						<td>{{ theme.name }}</td>
 						<td>{{ (theme.createdAt/1000)|date('d/m/Y') }}</td>
