@@ -76,4 +76,38 @@ router.put('/', [
 			return response.status(500)
 				.json({ stacktrace: e.stack });
 		}
-	})
+	});
+
+/**
+ * @GET | READ Course
+ *
+ * @Route("/course")
+ */
+router.get('/', async function(request, response) {
+  
+	try {
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find All Events
+		var events = await col.find().toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.render('course/crouse', { course: course });
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
