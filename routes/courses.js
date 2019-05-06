@@ -113,9 +113,9 @@ router.get('/', async function(request, response) {
 });
 
 /**
- * @DELETE | DELETE Event
+ * @DELETE | DELETE Course
  *
- * @Route("/events/:id")
+ * @Route("/course/:id")
  */
 router.delete('/:id', async function(request, response) {
 

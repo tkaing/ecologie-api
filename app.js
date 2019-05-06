@@ -8,7 +8,7 @@ var usersRouter = require('./routes/users');
 var eventsRouter = require('./routes/events');
 var themesRouter = require('./routes/themes');
 var associationsRouter = require('./routes/associations');
-var courseRouter = require('./routes/course');
+var courseRouter = require('./routes/courses');
 
 var app = express();
 
@@ -26,7 +26,7 @@ app.use('/users', usersRouter);
 app.use('/events', eventsRouter);
 app.use('/themes', themesRouter);
 app.use('/associations', associationsRouter);
-app.use('/course', courseRouter);
+app.use('/courses', courseRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
