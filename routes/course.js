@@ -111,3 +111,48 @@ router.get('/', async function(request, response) {
 			.json({ stacktrace: e.stack });
 	}
 });
+
+/**
+ * @DELETE | DELETE Event
+ *
+ * @Route("/events/:id")
+ */
+router.delete('/:id', async function(request, response) {
+
+	try {
+
+		var id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Event
+		var event = await col.findOne({ _id: ObjectId(id) });
+		if (event === null)
+			return response.status(422)
+				.json({ message: "Course introuvable" });
+
+		// Delete Event
+		await col.deleteOne({ _id: ObjectId(id) });
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+				.json({ message: "Une course a été supprimé" });
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+module.exports = router;
