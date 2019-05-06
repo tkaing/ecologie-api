@@ -95,7 +95,7 @@ router.get('/', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find All Events
-		var events = await col.find().toArray();
+		var courses = await col.find().toArray();
 
 		// Close Connection
 		client.close();
