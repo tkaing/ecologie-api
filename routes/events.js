@@ -118,7 +118,9 @@ router.get('/', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.render('events/events', { events: events });
+			.json(events);
+		//return response.status(200)
+		//	.render('events/events', { events: events });
 
 	} catch (e) {
 		// This will eventually be handled

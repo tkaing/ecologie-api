@@ -102,7 +102,9 @@ router.get('/', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.render('users/users', { users: users });
+			.json(users);
+		//return response.status(200)
+		//	.render('users/users', { users: users });
 
 	} catch (e) {
 		// This will eventually be handled
