@@ -95,7 +95,7 @@ router.put('/', [
 });
 
 /**
- * @GET | READ Event
+ * @GET | READ All Event
  *
  * @Route("/events")
  */
@@ -119,8 +119,47 @@ router.get('/', async function(request, response) {
 		// Response
 		return response.status(200)
 			.json(events);
-		//return response.status(200)
-		//	.render('events/events', { events: events });
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @GET | READ Event
+ *
+ * @Route("/events/{id}")
+ */
+router.get('/:id', async function(request, response) {
+  
+	try {
+		
+		var id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Event
+		var event = await col.findOne({ _id: ObjectId(id) });
+		if (event === null) {
+			return response.status(422)
+				.json({ message: "Evénement introuvable" });
+		}
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(event);
 
 	} catch (e) {
 		// This will eventually be handled
