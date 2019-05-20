@@ -79,7 +79,7 @@ router.put('/', [
 });
 
 /**
- * @GET | READ User
+ * @GET | READ All User
  *
  * @Route("/users")
  */
@@ -103,8 +103,47 @@ router.get('/', async function(request, response) {
 		// Response
 		return response.status(200)
 			.json(users);
-		//return response.status(200)
-		//	.render('users/users', { users: users });
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @GET | READ User
+ *
+ * @Route("/users/{id}")
+ */
+router.get('/:id', async function(request, response) {
+  
+	try {
+		
+		var id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find User
+		var user = await col.findOne({ _id: ObjectId(id) });
+		if (user === null) {
+			return response.status(422)
+				.json({ message: "Utilisateur introuvable" });
+		}
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(user);
 
 	} catch (e) {
 		// This will eventually be handled
