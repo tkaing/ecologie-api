@@ -54,18 +54,19 @@ router.put('/', [
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 		
-		//Prepare Association Resources
-		var birthdate = new Date(parseInt(data.birthdate));
+		// Prepare Association Resources
+		var birthdate = parseInt(data.birthdate);
+		var createdAt = parseInt((Date.now()) / 1000);
 
 		// Build Association
 		var association = {
 			email: data.email,
 			name: data.name,
-			birthdate: birthdate.getTime(),
+			birthdate: birthdate,
 			identifier: data.identifier,
 			phone: data.phone,
 			location: data.location,
-			createdAt: Date.now()
+			createdAt: createdAt
 		};
 
 		// Insert Association
@@ -111,7 +112,9 @@ router.get('/', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.render('associations/associations', { associations: associations });
+			.json(associations);
+		// return response.status(200)
+		// 	.render('associations/associations', { associations: associations });
 
 	} catch (e) {
 		// This will eventually be handled
