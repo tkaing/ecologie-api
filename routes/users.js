@@ -40,7 +40,7 @@ router.put('/', [
 				.json({ errors: errors.array() });
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -87,7 +87,7 @@ router.get('/', async function(request, response) {
   
 	try {
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -124,7 +124,7 @@ router.get('/:id', async function(request, response) {
 		var id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -165,7 +165,7 @@ router.delete('/:id', async function(request, response) {
 		var id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
