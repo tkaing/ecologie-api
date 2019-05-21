@@ -125,6 +125,47 @@ router.get('/', async function(request, response) {
 });
 
 /**
+ * @GET | READ Association
+ *
+ * @Route("/associations/{id}")
+ */
+router.get('/:id', async function(request, response) {
+  
+	try {
+		
+		var id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Association
+		var association = await col.findOne({ _id: ObjectId(id) });
+		if (association === null) {
+			return response.status(422)
+				.json({ message: "Association introuvable" });
+		}
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(association);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
  * @DELETE | DELETE Association
  *
  * @Route("/associations/:id")
