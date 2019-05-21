@@ -1,6 +1,6 @@
 var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'users';
+var MONGODB_COLLEC = 'events';
 
 var { check, validationResult } = require('express-validator/check');
 var MongoClient = require('mongodb').MongoClient;
@@ -9,23 +9,32 @@ var express = require('express');
 var router = express.Router();
 
 /**
- * @PUT | CREATE User
+ * @PUT | CREATE Event
  *
- * @Route("/users")
+ * @Route("/events")
  */
 router.put('/', [
-	// email
-	check('email')
-		.isEmail()
-		.withMessage("Ceci n'est pas une adresse valide."),
-	// firstname
-	check('firstname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
-	// lastname
-	check('lastname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
+	// name
+	check('name', 'Ce champ ne peut pas rester vide.')
+	.not().isEmpty(),
+	// capacity
+	check('capacity', 'Ce champ doit contenir que des chiffres.')
+	.isInt(),
+	// registration deadline
+	check('deadline', 'Ce champ doit être un timestamp.')
+	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
+	// start on...
+	check('startOn', 'Ce champ doit être un timestamp.')
+	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
+	// end on...
+	check('endOn', 'Ce champ doit être un timestamp.')
+	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
+	// categories
+	check('categories', 'Ce champ doit être un tableau.')
+	.isArray(),
+	// location
+	check('location', 'Ce champ doit être une paire de latitude/longitude.')
+	.isLatLong(),
 
 ], async function(request, response) {
 
@@ -47,28 +56,35 @@ router.put('/', [
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Build User
-		var user = {
-			email: data.email,
-			firstname: data.firstname,
-			lastname: data.lastname
+		// Prepare Event Resources
+		var deadline = new Date(parseInt(data.deadline));
+		var startOn = new Date(parseInt(data.startOn));
+		var endOn = new Date(parseInt(data.endOn));
+
+		// Build Event
+		var event = {
+			name: data.name,
+			capacity: parseInt(data.capacity),
+			deadline: deadline.getTime(),
+			startOn: startOn.getTime(),
+			endOn: endOn.getTime(),
+			categories: data.categories,
+			location: data.location,
+			createdAt: Date.now()
 		};
-		
-		// user.birthdate
-		// user.phone
-		// user.addressLongitude
-		// user.addressLatitude
-		// user.createdAt
+
+		// Next fields
+		// event.participants
 
 		// Insert Note
-		await col.insertOne(user);
+		await col.insertOne(event);
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.json({ user: user });
+			.json({ event: event });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -79,9 +95,9 @@ router.put('/', [
 });
 
 /**
- * @GET | READ All User
+ * @GET | READ All Event
  *
- * @Route("/users")
+ * @Route("/events")
  */
 router.get('/', async function(request, response) {
   
@@ -94,15 +110,15 @@ router.get('/', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find All Users
-		var users = await col.find().toArray();
+		// Find All Events
+		var events = await col.find().toArray();
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.json(users);
+			.json(events);
 
 	} catch (e) {
 		// This will eventually be handled
@@ -113,9 +129,9 @@ router.get('/', async function(request, response) {
 });
 
 /**
- * @GET | READ User
+ * @GET | READ Event
  *
- * @Route("/users/{id}")
+ * @Route("/events/{id}")
  */
 router.get('/:id', async function(request, response) {
   
@@ -131,11 +147,11 @@ router.get('/:id', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null) {
+		// Find Event
+		var event = await col.findOne({ _id: ObjectId(id) });
+		if (event === null) {
 			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
+				.json({ message: "Evénement introuvable" });
 		}
 
 		// Close Connection
@@ -143,7 +159,7 @@ router.get('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.json(user);
+			.json(event);
 
 	} catch (e) {
 		// This will eventually be handled
@@ -154,9 +170,9 @@ router.get('/:id', async function(request, response) {
 });
 
 /**
- * @DELETE | DELETE User
+ * @DELETE | DELETE Event
  *
- * @Route("/users/:id")
+ * @Route("/events/:id")
  */
 router.delete('/:id', async function(request, response) {
 
@@ -172,13 +188,13 @@ router.delete('/:id', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null)
+		// Find Event
+		var event = await col.findOne({ _id: ObjectId(id) });
+		if (event === null)
 			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
+				.json({ message: "Événement introuvable" });
 
-		// Delete User
+		// Delete Event
 		await col.deleteOne({ _id: ObjectId(id) });
 
 		// Close Connection
@@ -186,7 +202,7 @@ router.delete('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-				.json({ message: "Un utilisateur a été supprimé" });
+				.json({ message: "Un événement a été supprimé" });
 
 	} catch (e) {
 		// This will eventually be handled

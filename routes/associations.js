@@ -1,6 +1,6 @@
 var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'users';
+var MONGODB_COLLEC = 'associations';
 
 var { check, validationResult } = require('express-validator/check');
 var MongoClient = require('mongodb').MongoClient;
@@ -9,23 +9,30 @@ var express = require('express');
 var router = express.Router();
 
 /**
- * @PUT | CREATE User
+ * @PUT | CREATE Association
  *
- * @Route("/users")
+ * @Route("/associations")
  */
 router.put('/', [
 	// email
-	check('email')
-		.isEmail()
-		.withMessage("Ceci n'est pas une adresse valide."),
-	// firstname
-	check('firstname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
-	// lastname
-	check('lastname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
+	check('email', "Ceci n'est pas une adresse valide.")
+		.isEmail(),
+	// name
+	check('name', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
+	// birthdate
+	check('birthdate', 'ce champ doit être un timestamp')
+		.custom((value) => (new Date(parseInt(value))).getTime() > 0), 
+	// identifier (national id)
+	check('identifier', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
+	// phone
+	check('phone', "Ceci n'est pas une adresse email valide.")
+		.not().isEmpty(),
+	// location
+	check('location', 'Ce champ doit être une paire latitude/longitude.')
+		.isLatLong(),
+	
 
 ], async function(request, response) {
 
@@ -46,29 +53,31 @@ router.put('/', [
 		// Move to database and collection
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
-
-		// Build User
-		var user = {
-			email: data.email,
-			firstname: data.firstname,
-			lastname: data.lastname
-		};
 		
-		// user.birthdate
-		// user.phone
-		// user.addressLongitude
-		// user.addressLatitude
-		// user.createdAt
+		// Prepare Association Resources
+		var birthdate = parseInt(data.birthdate);
+		var createdAt = parseInt((Date.now()) / 1000);
 
-		// Insert Note
-		await col.insertOne(user);
+		// Build Association
+		var association = {
+			email: data.email,
+			name: data.name,
+			birthdate: birthdate,
+			identifier: data.identifier,
+			phone: data.phone,
+			location: data.location,
+			createdAt: createdAt
+		};
+
+		// Insert Association
+		await col.insertOne(association);
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.json({ user: user });
+			.json({ association: association });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -78,10 +87,11 @@ router.put('/', [
 	}
 });
 
+
 /**
- * @GET | READ All User
+ * @GET | READ Association
  *
- * @Route("/users")
+ * @Route("/associations")
  */
 router.get('/', async function(request, response) {
   
@@ -94,15 +104,17 @@ router.get('/', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find All Users
-		var users = await col.find().toArray();
+		// Find All Associations
+		var associations = await col.find().toArray();
 
 		// Close Connection
 		client.close();
 
 		// Response
 		return response.status(200)
-			.json(users);
+			.json(associations);
+		// return response.status(200)
+		// 	.render('associations/associations', { associations: associations });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -113,9 +125,9 @@ router.get('/', async function(request, response) {
 });
 
 /**
- * @GET | READ User
+ * @GET | READ Association
  *
- * @Route("/users/{id}")
+ * @Route("/associations/{id}")
  */
 router.get('/:id', async function(request, response) {
   
@@ -124,18 +136,18 @@ router.get('/:id', async function(request, response) {
 		var id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoClient(MONGODB_URI);
 		await client.connect();
 
 		// Move to database and collection
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null) {
+		// Find Association
+		var association = await col.findOne({ _id: ObjectId(id) });
+		if (association === null) {
 			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
+				.json({ message: "Association introuvable" });
 		}
 
 		// Close Connection
@@ -143,7 +155,7 @@ router.get('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.json(user);
+			.json(association);
 
 	} catch (e) {
 		// This will eventually be handled
@@ -154,9 +166,9 @@ router.get('/:id', async function(request, response) {
 });
 
 /**
- * @DELETE | DELETE User
+ * @DELETE | DELETE Association
  *
- * @Route("/users/:id")
+ * @Route("/associations/:id")
  */
 router.delete('/:id', async function(request, response) {
 
@@ -172,13 +184,13 @@ router.delete('/:id', async function(request, response) {
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null)
+		// Find Association
+		var association = await col.findOne({ _id: ObjectId(id) });
+		if (association === null)
 			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
+				.json({ message: "Association introuvable" });
 
-		// Delete User
+		// Delete Association
 		await col.deleteOne({ _id: ObjectId(id) });
 
 		// Close Connection
@@ -186,7 +198,7 @@ router.delete('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-				.json({ message: "Un utilisateur a été supprimé" });
+				.json({ message: "Une Association a été supprimé" });
 
 	} catch (e) {
 		// This will eventually be handled
