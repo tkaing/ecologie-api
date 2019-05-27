@@ -235,8 +235,9 @@ router.patch('/:id', [
 			createdAt: createdAt
 		};
 
-		// Insert Association
-		await col.insertOne(association);
+		// Update Association
+		await col.updateOne({ _id: ObjectId(id) },
+			{ $set: association });
 
 		// Close Connection
 		client.close();
