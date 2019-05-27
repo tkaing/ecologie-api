@@ -77,7 +77,7 @@ router.put('/', [
 
 		// Response
 		return response.status(200)
-			.json({ association: association });
+			.json(association);
 
 	} catch (e) {
 		// This will eventually be handled
@@ -146,9 +146,98 @@ router.get('/:id', async function(request, response) {
 		// Find Association
 		var association = await col.findOne({ _id: ObjectId(id) });
 		if (association === null) {
-			return response.status(422)
+			return response.status(404)
 				.json({ message: "Association introuvable" });
 		}
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(association);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @PATCH | UPDATE Association
+ *
+ * @Route("/associations/:id")
+ */
+router.patch('/:id', [
+	// email
+	check('email', "Ceci n'est pas une adresse valide.")
+		.isEmail(),
+	// name
+	check('name', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
+	// birthdate
+	check('birthdate', 'ce champ doit être un timestamp')
+		.custom((value) => (new Date(parseInt(value))).getTime() > 0), 
+	// identifier (national id)
+	check('identifier', "Ce champ ne peut pas rester vide.")
+		.not().isEmpty(), 
+	// phone
+	check('phone', "Ceci n'est pas une adresse email valide.")
+		.not().isEmpty(),
+	// location
+	check('location', 'Ce champ doit être une paire latitude/longitude.')
+		.isLatLong(),
+	
+
+], async function(request, response) {
+
+	try {
+
+		var id = request.params.id;
+
+		// Form data
+		var data = request.body;
+
+		// Form validation
+		var errors = validationResult(request);
+		if (!errors.isEmpty())
+			return response.status(422)
+				.json({ errors: errors.array() });
+
+		// Connect to MongoDB
+		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Association
+		var item = await col.findOne({ _id: ObjectId(id) });
+		if (item === null)
+			return response.status(404)
+				.json({ message: "Association introuvable" });
+		
+		// Prepare Association Resources
+		var birthdate = parseInt(data.birthdate);
+		var createdAt = item.createdAt;
+
+		// Build Association
+		var association = {
+			email: data.email,
+			name: data.name,
+			birthdate: birthdate,
+			identifier: data.identifier,
+			phone: data.phone,
+			location: data.location,
+			createdAt: createdAt
+		};
+
+		// Update Association
+		await col.updateOne({ _id: ObjectId(id) },
+			{ $set: association });
 
 		// Close Connection
 		client.close();
@@ -187,7 +276,7 @@ router.delete('/:id', async function(request, response) {
 		// Find Association
 		var association = await col.findOne({ _id: ObjectId(id) });
 		if (association === null)
-			return response.status(422)
+			return response.status(404)
 				.json({ message: "Association introuvable" });
 
 		// Delete Association
