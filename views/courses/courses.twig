@@ -1,0 +1,39 @@
+{% extends 'layout.twig' %}
+
+{% block stylesheet %}
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+{% endblock %}
+
+{% block body %}
+
+    <h1>ecologie-api</h1>
+
+    <div class="row">
+    	<div class="col"></div>
+
+		<div class="col-8">
+			<table class="table">
+				<tr>
+					<th>Identifier</th>
+					<th>Debut</th>
+					<th>Fin</th>
+					<th>Point de départ</th>
+					<th>Theme</th>
+				</tr>
+
+			    {% for course in courses %}
+			    	<tr>
+			    		<td>{{ course._id }}</td>
+			    		<td>{{ ((course.startOn)/1000)|date('d/m/Y H:i') }}</td>
+						<td>{{ ((course.endOn)/1000)|date('d/m/Y H:i') }}</td>
+						<td>{{ course.location }}</td>
+						<td>{{ course.theme }}</td>
+					</tr>
+			    {% endfor %}
+		    </table>
+		</div>
+
+    	<div class="col"></div>
+    </div>
+
+{% endblock %}
