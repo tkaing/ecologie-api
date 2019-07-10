@@ -1,51 +1,63 @@
-var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'courses';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_DBNAME = 'ecologie-api';
+const MONGODB_COLLEC = 'courses';
 
-var { check, validationResult } = require('express-validator/check');
-var MongoClient = require('mongodb').MongoClient;
-var ObjectId = require('mongodb').ObjectId;
-var express = require('express');
-var router = express.Router();
+const { check, validationResult } = require('express-validator/check');
+const configuration = require('../services/configuration');
+const validation = require('../services/validation');
+const MongoCli = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectId;
+const router = require('express').Router();
 
-
+const options = [{
+	attribute: "startOn",
+	validator: check('startOn')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "endOn",
+	validator: check('endOn')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "location",
+	validator: check('location')
+		.trim().isLatLong()
+		.withMessage(validation.LOCATION)
+}];
 
 /**
 * @PUT | CREATE Course
 *
 * @Route("/course")
 */
-router.put('/', courseMiddleware(), async function(request, response) {
+router.put('/', validation.validate(options), async function (request, response) {
 
 		try {
 			// Form data
-			var data = request.body;
+			const data = request.body;
 
-			//Form validation
-			var errors = validationResult(request);
+			// Form validation
+			const errors = validationResult(request);
 			if (!errors.isEmpty())
 				return response.status(422)
 					.json({ errors: errors.array() });
 
 			// Connect to MongoDB
-			const client = new MongoClient(MONGODB_URI);
+			const client = new MongoCli(MONGODB_URI);
 			await client.connect();
 
-			//Move to database and collection
+			// Move to database and collection
 			const dbi = client.db(MONGODB_DBNAME);
 			const col = dbi.collection(MONGODB_COLLEC);
 
-			// Prepare Course Resources
-			var startOn = new Date(parseInt(data.startOn));
-			var endOn = new Date(parseInt(data.endOn));
-
 			// Build Course
-			var course = {
-				startOn: startOn.getTime(),
-				endOn: endOn.getTime(),
+			const course = {
+				startOn: data.startOn,
+				endOn: data.endOn,
+				theme: data.theme,
 				location: data.location,
-				createdAt: Date.now(),
-				theme: data.theme
+				createdAt: Date.now()
 			};
 
 			// Next fields
@@ -69,11 +81,11 @@ router.put('/', courseMiddleware(), async function(request, response) {
  *
  * @Route("/course")
  */
-router.get('/', async function(request, response) {
+router.get('/', async function (request, response) {
   
 	try {
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoCli(MONGODB_URI);
 		await client.connect();
 
 		// Move to database and collection
@@ -81,7 +93,7 @@ router.get('/', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find All Events
-		var courses = await col.find().toArray();
+		const courses = await col.find().toArray();
 
 		// Close Connection
 		client.close();
@@ -99,18 +111,55 @@ router.get('/', async function(request, response) {
 });
 
 /**
+ * @GET | READ Some Courses
+ *
+ * @Route("/courses/criteria")
+ */
+router.get('/criteria', async function (request, response) {
+
+	try {
+		// Form data
+		const criteria = request.body;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Some Courses
+		const users = await col.find(criteria).toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(users);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
  * @GET | READ Course
  *
  * @Route("/courses/{id}")
  */
-router.get('/:id', async function(request, response) {
+router.get('/:id', async function (request, response) {
 
 	try {
-
-		var id = request.params.id;
+		// Identifier
+		const id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoCli(MONGODB_URI);
 		await client.connect();
 
 		// Move to database and collection
@@ -118,7 +167,7 @@ router.get('/:id', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find Course
-		var course = await col.findOne({ _id: ObjectId(id) });
+		const course = await col.findOne({ _id: ObjectId(id) });
 		if (course === null) {
 			return response.status(404)
 				.json({ message: "Parcours introuvable" });
@@ -144,23 +193,23 @@ router.get('/:id', async function(request, response) {
  *
  * @Route("/courses/:id")
  */
-router.patch('/:id', courseMiddleware(), async function(request, response) {
+router.patch('/:id', validation.validate(options), async function (request, response) {
 
 	try {
-
-		var id = request.params.id;
+		// Identifier
+		const id = request.params.id;
 
 		// Form data
-		var data = request.body;
+		const data = request.body;
 
 		// Form validation
-		var errors = validationResult(request);
+		const errors = validationResult(request);
 		if (!errors.isEmpty())
 			return response.status(422)
 				.json({ errors: errors.array() });
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -168,22 +217,18 @@ router.patch('/:id', courseMiddleware(), async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find Course
-		var item = await col.findOne({ _id: ObjectId(id) });
+		const item = await col.findOne({ _id: ObjectId(id) });
 		if (item === null) {
 			return response.status(404)
 				.json({ message: "Parcours introuvable" });
 		}
 
-		// Prepare Course Resources
-		var end = parseInt(data.endOn);
-		var start = parseInt(data.startOn);
-
 		// Build
-		var course = {
-			endOn: end,
-			startOn: start,
+		const course = {
+			startOn: data.start,
+			endOn: data.end,
 			theme: data.theme,
-			location: data.location,
+			location: data.location
 		};
 
 		// Update Association
@@ -210,14 +255,14 @@ router.patch('/:id', courseMiddleware(), async function(request, response) {
  *
  * @Route("/course/:id")
  */
-router.delete('/:id', async function(request, response) {
+router.delete('/:id', async function (request, response) {
 
 	try {
-
-		var id = request.params.id;
+		// Identifier
+		const id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI);
+		const client = new MongoCli(MONGODB_URI);
 		await client.connect();
 
 		// Move to database and collection
@@ -225,10 +270,10 @@ router.delete('/:id', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find Event
-		var event = await col.findOne({ _id: ObjectId(id) });
+		const event = await col.findOne({ _id: ObjectId(id) });
 		if (event === null) {
 			return response.status(404)
-				.json({ message: "Course introuvable" });
+				.json({ message: "Parcours introuvable" });
 		}
 
 		// Delete Event
@@ -239,7 +284,7 @@ router.delete('/:id', async function(request, response) {
 
 		// Response
 		return response.status(200)
-			.json({ message: "Une course a été supprimé" });
+			.json({ message: "Un parcours a été supprimé" });
 
 	} catch (e) {
 		// This will eventually be handled
@@ -248,24 +293,5 @@ router.delete('/:id', async function(request, response) {
 			.json({ stacktrace: e.stack });
 	}
 });
-
-function courseMiddleware() {
-
-	return [
-		//startOn
-		check('startOn', 'Ce champ doit être un timestamp.')
-			.custom((value) => (new Date(parseInt(value))).getTime() > 0),
-		//endOn
-		check('endOn', 'Ce champ doit être un timestamp.')
-			.custom((value) => (new Date(parseInt(value))).getTime() > 0),
-		//location
-		check('location', 'Ce champ doit être une paire de latitude/longitude.')
-			.isLatLong(),
-		//Theme
-		check('theme', 'Ce champ ne peut pas rester vide.')
-			.not().isEmpty(),
-
-	];
-}
 
 module.exports = router;

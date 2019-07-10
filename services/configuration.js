@@ -1,0 +1,1 @@
+exports.SET_PHONE = ['fr-FR'];

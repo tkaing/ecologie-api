@@ -1,73 +1,78 @@
-var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'events';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_DBNAME = 'ecologie-api';
+const MONGODB_COLLEC = 'events';
 
-var { check, validationResult } = require('express-validator/check');
-var MongoClient = require('mongodb').MongoClient;
-var ObjectId = require('mongodb').ObjectId;
-var express = require('express');
-var router = express.Router();
+const { check, validationResult } = require('express-validator/check');
+const configuration = require('../services/configuration');
+const validation = require('../services/validation');
+const MongoCli = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectId;
+const router = require('express').Router();
+
+const options = [{
+	attribute: "name",
+	validator: check('name')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "capacity",
+	validator: check('capacity')
+		.isInt()
+		.withMessage(validation.INTEGER)
+}, {
+	attribute: "deadline",
+	validator: check('deadline')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "startOn",
+	validator: check('startOn')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "endOn",
+	validator: check('endOn')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "location",
+	validator: check('location')
+		.trim().isLatLong()
+		.withMessage(validation.LOCATION)
+}];
 
 /**
  * @PUT | CREATE Event
  *
  * @Route("/events")
  */
-router.put('/', [
-	// name
-	check('name', 'Ce champ ne peut pas rester vide.')
-	.not().isEmpty(),
-	// capacity
-	check('capacity', 'Ce champ doit contenir que des chiffres.')
-	.isInt(),
-	// registration deadline
-	check('deadline', 'Ce champ doit être un timestamp.')
-	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
-	// start on...
-	check('startOn', 'Ce champ doit être un timestamp.')
-	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
-	// end on...
-	check('endOn', 'Ce champ doit être un timestamp.')
-	.custom((value) => (new Date(parseInt(value))).getTime() > 0),
-	// categories
-	check('categories', 'Ce champ doit être un tableau.')
-	.isArray(),
-	// location
-	check('location', 'Ce champ doit être une paire de latitude/longitude.')
-	.isLatLong(),
-
-], async function(request, response) {
+router.put('/', validation.validate(options), async function (request, response) {
 
 	try {
 		// Form data
-		var data = request.body;
+		const data = request.body;
 
 		// Form validation
-		var errors = validationResult(request);
+		const errors = validationResult(request);
 		if (!errors.isEmpty())
 			return response.status(422)
 				.json({ errors: errors.array() });
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
 		const dbi = client.db(MONGODB_DBNAME);
 		const col = dbi.collection(MONGODB_COLLEC);
 
-		// Prepare Event Resources
-		var deadline = new Date(parseInt(data.deadline));
-		var startOn = new Date(parseInt(data.startOn));
-		var endOn = new Date(parseInt(data.endOn));
-
 		// Build Event
-		var event = {
+		const event = {
 			name: data.name,
-			capacity: parseInt(data.capacity),
-			deadline: deadline.getTime(),
-			startOn: startOn.getTime(),
-			endOn: endOn.getTime(),
+			capacity: data.capacity,
+			deadline: data.deadline,
+			startOn: data.startOn,
+			endOn: data.endOn,
 			categories: data.categories,
 			location: data.location,
 			createdAt: Date.now()
@@ -99,11 +104,11 @@ router.put('/', [
  *
  * @Route("/events")
  */
-router.get('/', async function(request, response) {
+router.get('/', async function (request, response) {
   
 	try {
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -111,7 +116,7 @@ router.get('/', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find All Events
-		var events = await col.find().toArray();
+		const events = await col.find().toArray();
 
 		// Close Connection
 		client.close();
@@ -129,18 +134,55 @@ router.get('/', async function(request, response) {
 });
 
 /**
+ * @GET | READ Some Events
+ *
+ * @Route("/events/criteria")
+ */
+router.get('/criteria', async function (request, response) {
+
+	try {
+		// Form data
+		const criteria = request.body;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Some Events
+		const users = await col.find(criteria).toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(users);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
  * @GET | READ Event
  *
  * @Route("/events/{id}")
  */
-router.get('/:id', async function(request, response) {
+router.get('/:id', async function (request, response) {
   
 	try {
-		
-		var id = request.params.id;
+		// Identifier
+		const id = request.params.id;
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -148,7 +190,7 @@ router.get('/:id', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find Event
-		var event = await col.findOne({ _id: ObjectId(id) });
+		const event = await col.findOne({ _id: ObjectId(id) });
 		if (event === null) {
 			return response.status(422)
 				.json({ message: "Evénement introuvable" });
@@ -170,18 +212,27 @@ router.get('/:id', async function(request, response) {
 });
 
 /**
- * @DELETE | DELETE Event
+ * @PATCH | UPDATE Event
  *
  * @Route("/events/:id")
  */
-router.delete('/:id', async function(request, response) {
+router.patch('/:id', validation.validate(options), async function (request, response) {
 
 	try {
+		// Identifier
+		const id = request.params.id;
 
-		var id = request.params.id;
+		// Form data
+		const data = request.body;
+
+		// Form validation
+		const errors = validationResult(request);
+		if (!errors.isEmpty())
+			return response.status(422)
+				.json({ errors: errors.array() });
 
 		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
 		await client.connect();
 
 		// Move to database and collection
@@ -189,7 +240,63 @@ router.delete('/:id', async function(request, response) {
 		const col = dbi.collection(MONGODB_COLLEC);
 
 		// Find Event
-		var event = await col.findOne({ _id: ObjectId(id) });
+		const item = await col.findOne({ _id: ObjectId(id) });
+		if (item === null)
+			return response.status(404)
+				.json({ message: "Événement introuvable" });
+
+		// Build Event
+		const event = {
+			name: data.name,
+			capacity: data.capacity,
+			deadline: data.deadline,
+			startOn: data.startOn,
+			endOn: data.endOn,
+			categories: data.categories,
+			location: data.location,
+			createdAt: data.createdAt
+		};
+
+		// Update Event
+		await col.updateOne({ _id: ObjectId(id) },
+			{ $set: event });
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(user);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @DELETE | DELETE Event
+ *
+ * @Route("/events/:id")
+ */
+router.delete('/:id', async function (request, response) {
+
+	try {
+		// Identifier
+		const id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Event
+		const event = await col.findOne({ _id: ObjectId(id) });
 		if (event === null)
 			return response.status(422)
 				.json({ message: "Événement introuvable" });

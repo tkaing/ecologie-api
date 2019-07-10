@@ -1,81 +1,98 @@
-var MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
-var MONGODB_DBNAME = 'ecologie-api';
-var MONGODB_COLLEC = 'users';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
+const MONGODB_DBNAME = 'ecologie-api';
+const MONGODB_COLLEC = 'users';
 
-var { check, validationResult } = require('express-validator/check');
-var MongoClient = require('mongodb').MongoClient;
-var ObjectId = require('mongodb').ObjectId;
-var express = require('express');
-var router = express.Router();
+const { check, validationResult } = require('express-validator/check');
+const configuration = require('../services/configuration');
+const validation = require('../services/validation');
+const MongoCli = require('mongodb').MongoClient;
+const ObjectId = require('mongodb').ObjectId;
+const router = require('express').Router();
+
+const options = [{
+    attribute: "email",
+    validator: check('email')
+        .trim().isEmail()
+        .withMessage(validation.EMAIL)
+}, {
+    attribute: "firstname",
+    validator: check('firstname')
+        .trim().not().isEmpty()
+        .withMessage(validation.NOT_BLANK)
+}, {
+    attribute: "lastname",
+    validator: check('lastname')
+        .trim().not().isEmpty()
+        .withMessage(validation.NOT_BLANK)
+}, {
+    attribute: "birthdate",
+    validator: check('birthdate')
+        .trim().not().isEmpty()
+        .withMessage(validation.NOT_BLANK)
+}, {
+    attribute: "phone",
+    validator: check('phone')
+        .trim().isMobilePhone(configuration.SET_PHONE)
+        .withMessage(validation.PHONE)
+}, {
+    attribute: "location",
+    validator: check('location')
+        .trim().isLatLong()
+        .withMessage(validation.LOCATION)
+}];
 
 /**
  * @PUT | CREATE User
  *
  * @Route("/users")
  */
-router.put('/', [
-	// email
-	check('email')
-		.isEmail()
-		.withMessage("Ceci n'est pas une adresse valide."),
-	// firstname
-	check('firstname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
-	// lastname
-	check('lastname')
-		.not().isEmpty()
-		.withMessage("Ce champ ne peut pas rester vide."), 
+router.put('/', validation.validate(options), async function (request, response) {
 
-], async function(request, response) {
+    try {
+        // Form data
+        const data = request.body;
 
-	try {
-		// Form data
-		var data = request.body;
+        // Form validation
+        const errors = validationResult(request);
+        if (!errors.isEmpty())
+            return response.status(422)
+                .json({ errors: errors.array() });
 
-		// Form validation
-		var errors = validationResult(request);
-		if (!errors.isEmpty())
-			return response.status(422)
-				.json({ errors: errors.array() });
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
 
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+        // Build User
+        const user = {
+            email: data.email,
+            firstname: data.firstname,
+            lastname: data.lastname,
+            birthdate: data.birthdate,
+            phone: data.phone,
+            location: data.location,
+            createdAt: Date.now()
+        };
 
-		// Build User
-		var user = {
-			email: data.email,
-			firstname: data.firstname,
-			lastname: data.lastname,
-			birthdate: data.birthdate,
-			phone: data.phone,
-			location: data.location,
-			createdAt: data.createdAt,
-		};
-		
-		
+        // Insert User
+        await col.insertOne(user);
 
-		// Insert Note
-		await col.insertOne(user);
+        // Close Connection
+        client.close();
 
-		// Close Connection
-		client.close();
+        // Response
+        return response.status(200)
+            .json({ user: user });
 
-		// Response
-		return response.status(200)
-			.json({ user: user });
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
 });
 
 /**
@@ -83,33 +100,70 @@ router.put('/', [
  *
  * @Route("/users")
  */
-router.get('/', async function(request, response) {
-  
-	try {
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
+router.get('/', async function (request, response) {
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+    try {
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
 
-		// Find All Users
-		var users = await col.find().toArray();
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
 
-		// Close Connection
-		client.close();
+        // Find All Users
+        const users = await col.find().toArray();
 
-		// Response
-		return response.status(200)
-			.json(users);
+        // Close Connection
+        client.close();
 
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
+        // Response
+        return response.status(200)
+            .json(users);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
+});
+
+/**
+ * @GET | READ Some Users
+ *
+ * @Route("/users/criteria")
+ */
+router.get('/criteria', async function (request, response) {
+
+    try {
+        // Form data
+        const criteria = request.body;
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find Some Users
+        const users = await col.find(criteria).toArray();
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200)
+            .json(users);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
 });
 
 /**
@@ -117,40 +171,40 @@ router.get('/', async function(request, response) {
  *
  * @Route("/users/{id}")
  */
-router.get('/:id', async function(request, response) {
-  
-	try {
-		
-		var id = request.params.id;
+router.get('/:id', async function (request, response) {
 
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
+    try {
+        // Identifier
+        const id = request.params.id;
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null) {
-			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
-		}
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
 
-		// Close Connection
-		client.close();
+        // Find User
+        const user = await col.findOne({ _id: ObjectId(id) });
+        if (user === null) {
+            return response.status(422)
+                .json({ message: "Utilisateur introuvable" });
+        }
 
-		// Response
-		return response.status(200)
-			.json(user);
+        // Close Connection
+        client.close();
 
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
+        // Response
+        return response.status(200)
+            .json(user);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
 });
 
 /**
@@ -158,88 +212,63 @@ router.get('/:id', async function(request, response) {
  *
  * @Route("/Users/:id")
  */
-router.patch('/:id', [
-	// email
-	check('email', "Ceci n'est pas une adresse valide.")
-		.isEmail(),
-	// firstname
-	check('firstname', "Ce champ ne peut pas rester vide.")
-		.not().isEmpty(), 
-		// name
-	check('lastname', "Ce champ ne peut pas rester vide.")
-	.not().isEmpty(), 
-	// birthdate
-	check('birthdate', 'ce champ doit être un timestamp')
-		.custom((value) => (new Date(parseInt(value))).getTime() > 0), 
-	// phone
-	check('phone', "Ceci n'est pas une adresse email valide.")
-		.not().isEmpty(),
-	// location
-	check('location', 'Ce champ doit être une paire latitude/longitude.')
-		.isLatLong(),
-	
+router.patch('/:id', validation.validate(options), async function (request, response) {
 
-], async function(request, response) {
+    try {
+        // Identifier
+        const id = request.params.id;
 
-	try {
+        // Form data
+        const data = request.body;
 
-		var id = request.params.id;
+        // Form validation
+        const errors = validationResult(request);
+        if (!errors.isEmpty())
+            return response.status(422)
+                .json({ errors: errors.array() });
 
-		// Form data
-		var data = request.body;
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
 
-		// Form validation
-		var errors = validationResult(request);
-		if (!errors.isEmpty())
-			return response.status(422)
-				.json({ errors: errors.array() });
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
 
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
+        // Find User
+        const item = await col.findOne({ _id: ObjectId(id) });
+        if (item === null)
+            return response.status(404)
+                .json({ message: "Utilisateur introuvable" });
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+        // Build User
+        const user = {
+            email: data.email,
+            firstname: data.firstname,
+            lastname: data.lastname,
+            birthdate: data.birthdate,
+            phone: data.phone,
+            location: data.location,
+            createdAt: data.createdAt,
+        };
 
-		// Find User
-		var item = await col.findOne({ _id: ObjectId(id) });
-		if (item === null)
-			return response.status(404)
-				.json({ message: "User introuvable" });
-		
-		// Prepare User Resources
-		var birthdate = parseInt(data.birthdate);
-		var createdAt = item.createdAt;
+        // Update User
+        await col.updateOne({ _id: ObjectId(id) },
+            { $set: user });
 
-		// Build User
-		var user = {
-			email: data.email,
-			firstname: data.firstname,
-			lastname: data.lastname,
-			birthdate: data.birthdate,
-			phone: data.phone,
-			location: data.location,
-			createdAt: data.createdAt,
-		};
+        // Close Connection
+        client.close();
 
-		// Update User
-		await col.updateOne({ _id: ObjectId(id) },
-			{ $set: user });
+        // Response
+        return response.status(200)
+            .json(user);
 
-		// Close Connection
-		client.close();
-
-		// Response
-		return response.status(200)
-			.json(user);
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
 });
 
 /**
@@ -247,42 +276,42 @@ router.patch('/:id', [
  *
  * @Route("/users/:id")
  */
-router.delete('/:id', async function(request, response) {
+router.delete('/:id', async function (request, response) {
 
-	try {
+    try {
+        // Identifier
+        const id = request.params.id;
 
-		var id = request.params.id;
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
 
-		// Connect to MongoDB
-		const client = new MongoClient(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
 
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
+        // Find User
+        const user = await col.findOne({ _id: ObjectId(id) });
+        if (user === null)
+            return response.status(422)
+                .json({ message: "Utilisateur introuvable" });
 
-		// Find User
-		var user = await col.findOne({ _id: ObjectId(id) });
-		if (user === null)
-			return response.status(422)
-				.json({ message: "Utilisateur introuvable" });
+        // Delete User
+        await col.deleteOne({ _id: ObjectId(id) });
 
-		// Delete User
-		await col.deleteOne({ _id: ObjectId(id) });
+        // Close Connection
+        client.close();
 
-		// Close Connection
-		client.close();
+        // Response
+        return response.status(200)
+            .json({ message: "Un utilisateur a été supprimé" });
 
-		// Response
-		return response.status(200)
-				.json({ message: "Un utilisateur a été supprimé" });
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
 });
 
 module.exports = router;
