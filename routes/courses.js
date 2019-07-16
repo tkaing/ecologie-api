@@ -10,6 +10,11 @@ const ObjectId = require('mongodb').ObjectId;
 const router = require('express').Router();
 
 const options = [{
+	attribute: "name",
+	validator: check('name')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
 	attribute: "startOn",
 	validator: check('startOn')
 		.trim().not().isEmpty()
@@ -24,6 +29,51 @@ const options = [{
 	validator: check('location')
 		.trim().isLatLong()
 		.withMessage(validation.LOCATION)
+}, {
+	attribute: "rating",
+	validator: check('rating')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "address",
+	validator: check('address')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "zip",
+	validator: check('zip')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "city",
+	validator: check('city')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "glassWaste",
+	validator: check('glassWaste')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "plasticWaste",
+	validator: check('plasticWaste')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "foodWaste",
+	validator: check('foodWaste')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "otherWaste",
+	validator: check('otherWaste')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
+}, {
+	attribute: "association",
+	validator: check('association')
+		.trim().isInt()
+		.withMessage(validation.INTEGER)
 }];
 
 /**
@@ -53,19 +103,20 @@ router.put('/', validation.validate(options), async function (request, response)
 
 			// Build Course
 			const course = {
-				startOn: startOn.getTime(),
-				endOn: endOn.getTime(),
+				name: data.name,
+				startOn: data.startOn,
+				endOn: data.endOn,
 				location: data.location,
-				createdAt: Date.now(),
 				address: data.address,
 				zip: data.zip,
 				city: data.city,
 				rating: data.rating,
-				glassWeast: data.glassWeast,
-				plasticWeast: data.plasticWeast,
-				foodWeast:data.foodWeast,
-				otherWeast:data.otherWeast,
-				name: data.name
+				glassWaste: data.glassWaste,
+				plasticWaste: data.plasticWaste,
+				foodWaste: data.foodWaste,
+				otherWaste: data.otherWaste,
+				association: data.association,
+				createdAt: Date.now()
 			};
 
 			// Next fields
@@ -233,10 +284,19 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 
 		// Build
 		const course = {
-			startOn: data.start,
-			endOn: data.end,
-			theme: data.theme,
-			location: data.location
+			name: data.name,
+			startOn: data.startOn,
+			endOn: data.endOn,
+			location: data.location,
+			address: data.address,
+			zip: data.zip,
+			city: data.city,
+			rating: data.rating,
+			glassWaste: data.glassWaste,
+			plasticWaste: data.plasticWaste,
+			foodWaste: data.foodWaste,
+			otherWaste: data.otherWaste,
+			association: data.association
 		};
 
 		// Update Association

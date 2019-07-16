@@ -39,6 +39,11 @@ const options = [{
 	validator: check('location')
 		.trim().isLatLong()
 		.withMessage(validation.LOCATION)
+}, {
+	attribute: "state",
+	validator: check('state')
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
 }];
 
 /**
@@ -74,6 +79,7 @@ router.put('/', validation.validate(options), async function (request, response)
 			identifier: data.identifier,
 			phone: data.phone,
 			location: data.location,
+			state: data.state,
 			createdAt: Date.now()
 		};
 
@@ -251,6 +257,7 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 			identifier: data.identifier,
 			phone: data.phone,
 			location: data.location,
+			state: data.state,
 			createdAt: data.createdAt
 		};
 

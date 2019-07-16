@@ -1,6 +1,6 @@
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017';
 const MONGODB_DBNAME = 'ecologie-api';
-const MONGODB_COLLEC = 'users';
+const MONGODB_COLLEC = 'members';
 
 const { check, validationResult } = require('express-validator/check');
 const configuration = require('../services/configuration');
@@ -15,36 +15,21 @@ const options = [{
         .trim().isEmail()
         .withMessage(validation.EMAIL)
 }, {
-    attribute: "firstname",
-    validator: check('firstname')
+    attribute: "role",
+    validator: check('role')
         .trim().not().isEmpty()
         .withMessage(validation.NOT_BLANK)
 }, {
-    attribute: "lastname",
-    validator: check('lastname')
-        .trim().not().isEmpty()
-        .withMessage(validation.NOT_BLANK)
-}, {
-    attribute: "birthdate",
-    validator: check('birthdate')
-        .trim().not().isEmpty()
-        .withMessage(validation.NOT_BLANK)
-}, {
-    attribute: "phone",
-    validator: check('phone')
-        .trim().isMobilePhone(configuration.SET_PHONE)
-        .withMessage(validation.PHONE)
-}, {
-    attribute: "location",
-    validator: check('location')
-        .trim().isLatLong()
-        .withMessage(validation.LOCATION)
+    attribute: "association",
+    validator: check('association')
+        .trim().isInt()
+        .withMessage(validation.INTEGER)
 }];
 
 /**
- * @PUT | CREATE User
+ * @PUT | CREATE Member
  *
- * @Route("/users")
+ * @Route("/members")
  */
 router.put('/', validation.validate(options), async function (request, response) {
 
@@ -66,26 +51,23 @@ router.put('/', validation.validate(options), async function (request, response)
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Build User
-        const user = {
+        // Build Member
+        const member = {
             email: data.email,
-            firstname: data.firstname,
-            lastname: data.lastname,
-            birthdate: data.birthdate,
-            phone: data.phone,
-            location: data.location,
+            role: data.role,
+            association: data.association,
             createdAt: Date.now()
         };
 
-        // Insert User
-        await col.insertOne(user);
+        // Insert Member
+        await col.insertOne(member);
 
         // Close Connection
         client.close();
 
         // Response
         return response.status(200)
-            .json({ user: user });
+            .json({ member: member });
 
     } catch (e) {
         // This will eventually be handled
@@ -96,9 +78,9 @@ router.put('/', validation.validate(options), async function (request, response)
 });
 
 /**
- * @GET | READ All User
+ * @GET | READ All Member
  *
- * @Route("/users")
+ * @Route("/members")
  */
 router.get('/', async function (request, response) {
 
@@ -111,15 +93,15 @@ router.get('/', async function (request, response) {
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Find All Users
-        const users = await col.find().toArray();
+        // Find All Members
+        const members = await col.find().toArray();
 
         // Close Connection
         client.close();
 
         // Response
         return response.status(200)
-            .json(users);
+            .json(members);
 
     } catch (e) {
         // This will eventually be handled
@@ -130,9 +112,9 @@ router.get('/', async function (request, response) {
 });
 
 /**
- * @GET | READ Some Users
+ * @GET | READ Some Members
  *
- * @Route("/users/criteria")
+ * @Route("/members/criteria")
  */
 router.get('/criteria', async function (request, response) {
 
@@ -148,15 +130,15 @@ router.get('/criteria', async function (request, response) {
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Find Some Users
-        const users = await col.find(criteria).toArray();
+        // Find Some Members
+        const members = await col.find(criteria).toArray();
 
         // Close Connection
         client.close();
 
         // Response
         return response.status(200)
-            .json(users);
+            .json(members);
 
     } catch (e) {
         // This will eventually be handled
@@ -167,9 +149,9 @@ router.get('/criteria', async function (request, response) {
 });
 
 /**
- * @GET | READ User
+ * @GET | READ Member
  *
- * @Route("/users/{id}")
+ * @Route("/members/{id}")
  */
 router.get('/:id', async function (request, response) {
 
@@ -185,11 +167,11 @@ router.get('/:id', async function (request, response) {
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Find User
-        const user = await col.findOne({ _id: ObjectId(id) });
-        if (user === null) {
+        // Find Member
+        const member = await col.findOne({ _id: ObjectId(id) });
+        if (member === null) {
             return response.status(422)
-                .json({ message: "Utilisateur introuvable" });
+                .json({ message: "Membre introuvable" });
         }
 
         // Close Connection
@@ -197,7 +179,7 @@ router.get('/:id', async function (request, response) {
 
         // Response
         return response.status(200)
-            .json(user);
+            .json(member);
 
     } catch (e) {
         // This will eventually be handled
@@ -208,9 +190,9 @@ router.get('/:id', async function (request, response) {
 });
 
 /**
- * @PATCH | UPDATE User
+ * @PATCH | UPDATE Member
  *
- * @Route("/users/:id")
+ * @Route("/members/:id")
  */
 router.patch('/:id', validation.validate(options), async function (request, response) {
 
@@ -235,33 +217,30 @@ router.patch('/:id', validation.validate(options), async function (request, resp
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Find User
+        // Find Member
         const item = await col.findOne({ _id: ObjectId(id) });
         if (item === null)
             return response.status(404)
-                .json({ message: "Utilisateur introuvable" });
+                .json({ message: "Membre introuvable" });
 
-        // Build User
-        const user = {
+        // Build Member
+        const member = {
             email: data.email,
-            firstname: data.firstname,
-            lastname: data.lastname,
-            birthdate: data.birthdate,
-            phone: data.phone,
-            location: data.location,
-            createdAt: data.createdAt,
+            role: data.role,
+            association: data.association,
+            createdAt: data.createdAt
         };
 
-        // Update User
+        // Update Member
         await col.updateOne({ _id: ObjectId(id) },
-            { $set: user });
+            { $set: member });
 
         // Close Connection
         client.close();
 
         // Response
         return response.status(200)
-            .json(user);
+            .json(member);
 
     } catch (e) {
         // This will eventually be handled
@@ -272,9 +251,9 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 });
 
 /**
- * @DELETE | DELETE User
+ * @DELETE | DELETE Member
  *
- * @Route("/users/:id")
+ * @Route("/members/:id")
  */
 router.delete('/:id', async function (request, response) {
 
@@ -290,13 +269,13 @@ router.delete('/:id', async function (request, response) {
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
-        // Find User
-        const user = await col.findOne({ _id: ObjectId(id) });
-        if (user === null)
+        // Find Member
+        const member = await col.findOne({ _id: ObjectId(id) });
+        if (member === null)
             return response.status(422)
-                .json({ message: "Utilisateur introuvable" });
+                .json({ message: "Membre introuvable" });
 
-        // Delete User
+        // Delete Member
         await col.deleteOne({ _id: ObjectId(id) });
 
         // Close Connection
@@ -304,7 +283,7 @@ router.delete('/:id', async function (request, response) {
 
         // Response
         return response.status(200)
-            .json({ message: "Un utilisateur a été supprimé" });
+            .json({ message: "Un membre a été supprimé" });
 
     } catch (e) {
         // This will eventually be handled

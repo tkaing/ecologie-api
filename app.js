@@ -7,7 +7,8 @@ const createError = require('http-errors');
 const indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users');
 const eventsRouter = require('./routes/events');
-const courseRouter = require('./routes/courses');
+const membersRouter = require('./routes/members');
+const coursesRouter = require('./routes/courses');
 const associationsRouter = require('./routes/associations');
 
 const app = express();
@@ -24,8 +25,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/users', usersRouter);
 app.use('/events', eventsRouter);
+app.use('/members', membersRouter);
+app.use('/courses', coursesRouter);
 app.use('/associations', associationsRouter);
-app.use('/courses', courseRouter);
 
 // catch 404 and forward to error handler
 app.use(function (req, res, next) {
