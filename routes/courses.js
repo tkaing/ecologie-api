@@ -53,11 +53,19 @@ router.put('/', validation.validate(options), async function (request, response)
 
 			// Build Course
 			const course = {
-				startOn: data.startOn,
-				endOn: data.endOn,
-				theme: data.theme,
+				startOn: startOn.getTime(),
+				endOn: endOn.getTime(),
 				location: data.location,
-				createdAt: Date.now()
+				createdAt: Date.now(),
+				address: data.address,
+				zip: data.zip,
+				city: data.city,
+				rating: data.rating,
+				glassWeast: data.glassWeast,
+				plasticWeast: data.plasticWeast,
+				foodWeast:data.foodWeast,
+				otherWeast:data.otherWeast,
+				name: data.name
 			};
 
 			// Next fields
