@@ -17,8 +17,8 @@ const options = [{
 }, {
 	attribute: "name",
 	validator: check('name')
-		.isInt()
-		.withMessage(validation.INTEGER)
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
 }, {
 	attribute: "birthdate",
 	validator: check('birthdate')
