@@ -186,11 +186,11 @@ router.post('/login', async function (request, response) {
 });
 
 /**
- * @GET | READ Some Users
+ * @POST | READ Some Users
  *
  * @Route("/users/criteria")
  */
-router.get('/criteria', async function (request, response) {
+router.post('/criteria', async function (request, response) {
 
     try {
         // Form data

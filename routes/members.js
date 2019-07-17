@@ -172,7 +172,7 @@ router.post('/login', async function (request, response) {
  *
  * @Route("/members/criteria")
  */
-router.get('/criteria', async function (request, response) {
+router.post('/criteria', async function (request, response) {
 
     try {
         // Form data
