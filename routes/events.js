@@ -37,8 +37,8 @@ const options = [{
 }, {
 	attribute: "location",
 	validator: check('location')
-		.trim().isLatLong()
-		.withMessage(validation.LOCATION)
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
 }];
 
 /**
