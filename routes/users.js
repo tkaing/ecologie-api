@@ -5,8 +5,10 @@ const MONGODB_COLLEC = 'users';
 const { check, validationResult } = require('express-validator/check');
 const configuration = require('../services/configuration');
 const validation = require('../services/validation');
+const password = require('../services/password');
 const MongoCli = require('mongodb').MongoClient;
 const ObjectId = require('mongodb').ObjectId;
+const CryptoJS = require('crypto-js');
 const router = require('express').Router();
 
 const options = [{
@@ -66,6 +68,11 @@ router.put('/', validation.validate(options), async function (request, response)
         const dbi = client.db(MONGODB_DBNAME);
         const col = dbi.collection(MONGODB_COLLEC);
 
+        // Generate Password
+        const source = password.generate();
+        const encrypted = CryptoJS.AES.encrypt(source, password.SECRET);
+        const decrypted = CryptoJS.AES.decrypt(encrypted, password.SECRET);
+
         // Build User
         const user = {
             email: data.email,
@@ -74,6 +81,7 @@ router.put('/', validation.validate(options), async function (request, response)
             birthdate: data.birthdate,
             phone: data.phone,
             location: data.location,
+            password: encrypted.toString(),
             createdAt: Date.now()
         };
 
@@ -85,7 +93,7 @@ router.put('/', validation.validate(options), async function (request, response)
 
         // Response
         return response.status(200)
-            .json({ user: user });
+            .json({ user: user, code: decrypted.toString() });
 
     } catch (e) {
         // This will eventually be handled
@@ -120,6 +128,54 @@ router.get('/', async function (request, response) {
         // Response
         return response.status(200)
             .json(users);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
+});
+
+/**
+ * @GET | READ Some Users
+ *
+ * @Route("/users/criteria")
+ */
+router.get('/login', async function (request, response) {
+
+    try {
+        // Form data
+        const criteria = request.body;
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find User
+        const user = await col.findOne({ email: criteria.email });
+        if (user === null) {
+            return response.status(422)
+                .json({ message: "Utilisateur introuvable" });
+        }
+
+        // Check Password
+        const bytes = CryptoJS.AES.decrypt(user.password, password.SECRET);
+        if (bytes.toString() !== criteria.password) {
+            return response.status(401)
+                .json({ message: "Mot de passe incorrect" });
+        }
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200)
+            .json(user);
 
     } catch (e) {
         // This will eventually be handled
@@ -249,6 +305,7 @@ router.patch('/:id', validation.validate(options), async function (request, resp
             birthdate: data.birthdate,
             phone: data.phone,
             location: data.location,
+            password: data.password,
             createdAt: data.createdAt,
         };
 

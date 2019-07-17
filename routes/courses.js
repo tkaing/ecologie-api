@@ -72,8 +72,8 @@ const options = [{
 }, {
 	attribute: "association",
 	validator: check('association')
-		.trim().isInt()
-		.withMessage(validation.INTEGER)
+		.trim().not().isEmpty()
+		.withMessage(validation.NOT_BLANK)
 }];
 
 /**

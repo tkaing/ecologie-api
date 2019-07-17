@@ -126,8 +126,6 @@ router.get('/', async function (request, response) {
 		// Response
 		return response.status(200)
 			.json(associations);
-		// return response.status(200)
-		// 	.render('associations/associations', { associations: associations });
 
 	} catch (e) {
 		// This will eventually be handled
