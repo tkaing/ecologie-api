@@ -120,11 +120,11 @@ router.get('/', async function (request, response) {
 });
 
 /**
- * @GET | READ Some Members
+ * @POST | READ Some Members
  *
- * @Route("/members/criteria")
+ * @Route("/members/login")
  */
-router.get('/login', async function (request, response) {
+router.post('/login', async function (request, response) {
 
     try {
         // Form data
