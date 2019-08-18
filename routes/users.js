@@ -71,7 +71,7 @@ router.put('/', validation.validate(options), async function (request, response)
         // Generate Password
         const source = password.generate();
         const encrypted = CryptoJS.AES.encrypt(source, password.SECRET);
-        const decrypted = CryptoJS.AES.decrypt(encrypted, password.SECRET);
+        const decrypted = CryptoJS.AES.decrypt(encrypted.toString(), password.SECRET);
 
         // Build User
         const user = {
@@ -93,7 +93,7 @@ router.put('/', validation.validate(options), async function (request, response)
 
         // Response
         return response.status(200)
-            .json({ user: user, code: decrypted.toString() });
+            .json({ user: user, code: decrypted.toString(CryptoJS.enc.Utf8) });
 
     } catch (e) {
         // This will eventually be handled
@@ -164,8 +164,9 @@ router.post('/login', async function (request, response) {
         }
 
         // Check Password
+        console.log(password.SECRET);
         const bytes = CryptoJS.AES.decrypt(user.password, password.SECRET);
-        if (bytes.toString() !== criteria.password) {
+        if (bytes.toString(CryptoJS.enc.Utf8) !== criteria.password) {
             return response.status(401)
                 .json({ message: "Mot de passe incorrect" });
         }
