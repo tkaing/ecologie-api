@@ -385,11 +385,11 @@ router.post('/login', async function (request, response) {
 });
 
 /**
- * @GET | findOneBy email (with code)
+ * @POST | findOneBy email (with code)
  *
  * @Route("/users/code")
  */
-router.get('/code', async function (request, response) {
+router.post('/code', async function (request, response) {
 
     try {
         // Form data
