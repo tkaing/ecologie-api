@@ -44,187 +44,7 @@ const options = [{
 }];
 
 /**
- * @PUT | CREATE User
- *
- * @Route("/users")
- */
-router.put('/', validation.validate(options), async function (request, response) {
-
-    try {
-        // Form data
-        const data = request.body;
-
-        // Form validation
-        const errors = validationResult(request);
-        if (!errors.isEmpty())
-            return response.status(422)
-                .json({ errors: errors.array() });
-
-        // Connect to MongoDB
-        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
-        await client.connect();
-
-        // Move to database and collection
-        const dbi = client.db(MONGODB_DBNAME);
-        const col = dbi.collection(MONGODB_COLLEC);
-
-        // Generate Password
-        const source = password.generate();
-        const encrypted = CryptoJS.AES.encrypt(source, password.SECRET);
-        const decrypted = CryptoJS.AES.decrypt(encrypted.toString(), password.SECRET);
-
-        // Build User
-        const user = {
-            email: data.email,
-            firstname: data.firstname,
-            lastname: data.lastname,
-            birthdate: data.birthdate,
-            phone: data.phone,
-            location: data.location,
-            password: encrypted.toString(),
-            createdAt: Date.now()
-        };
-
-        // Insert User
-        await col.insertOne(user);
-
-        // Close Connection
-        client.close();
-
-        // Response
-        return response.status(200)
-            .json({ user: user, code: decrypted.toString(CryptoJS.enc.Utf8) });
-
-    } catch (e) {
-        // This will eventually be handled
-        // ... by your error handling middleware
-        return response.status(500)
-            .json({ stacktrace: e.stack });
-    }
-});
-
-/**
- * @GET | READ All User
- *
- * @Route("/users")
- */
-router.get('/', async function (request, response) {
-
-    try {
-        // Connect to MongoDB
-        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
-        await client.connect();
-
-        // Move to database and collection
-        const dbi = client.db(MONGODB_DBNAME);
-        const col = dbi.collection(MONGODB_COLLEC);
-
-        // Find All Users
-        const users = await col.find().toArray();
-
-        // Close Connection
-        client.close();
-
-        // Response
-        return response.status(200)
-            .json(users);
-
-    } catch (e) {
-        // This will eventually be handled
-        // ... by your error handling middleware
-        return response.status(500)
-            .json({ stacktrace: e.stack });
-    }
-});
-
-/**
- * @POST | READ Some Users
- *
- * @Route("/users/login")
- */
-router.post('/login', async function (request, response) {
-
-    try {
-        // Form data
-        const criteria = request.body;
-
-        // Connect to MongoDB
-        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
-        await client.connect();
-
-        // Move to database and collection
-        const dbi = client.db(MONGODB_DBNAME);
-        const col = dbi.collection(MONGODB_COLLEC);
-
-        // Find User
-        const user = await col.findOne({ email: criteria.email });
-        if (user === null) {
-            return response.status(422)
-                .json({ message: "Utilisateur introuvable" });
-        }
-
-        // Check Password
-        console.log(password.SECRET);
-        const bytes = CryptoJS.AES.decrypt(user.password, password.SECRET);
-        if (bytes.toString(CryptoJS.enc.Utf8) !== criteria.password) {
-            return response.status(401)
-                .json({ message: "Mot de passe incorrect" });
-        }
-
-        // Close Connection
-        client.close();
-
-        // Response
-        return response.status(200)
-            .json(user);
-
-    } catch (e) {
-        // This will eventually be handled
-        // ... by your error handling middleware
-        return response.status(500)
-            .json({ stacktrace: e.stack });
-    }
-});
-
-/**
- * @POST | READ Some Users
- *
- * @Route("/users/criteria")
- */
-router.post('/criteria', async function (request, response) {
-
-    try {
-        // Form data
-        const criteria = request.body;
-
-        // Connect to MongoDB
-        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
-        await client.connect();
-
-        // Move to database and collection
-        const dbi = client.db(MONGODB_DBNAME);
-        const col = dbi.collection(MONGODB_COLLEC);
-
-        // Find Some Users
-        const users = await col.find(criteria).toArray();
-
-        // Close Connection
-        client.close();
-
-        // Response
-        return response.status(200)
-            .json(users);
-
-    } catch (e) {
-        // This will eventually be handled
-        // ... by your error handling middleware
-        return response.status(500)
-            .json({ stacktrace: e.stack });
-    }
-});
-
-/**
- * @GET | READ User
+ * @GET | find
  *
  * @Route("/users/{id}")
  */
@@ -265,7 +85,74 @@ router.get('/:id', async function (request, response) {
 });
 
 /**
- * @PATCH | UPDATE User
+ * @PUT | create
+ *
+ * @Route("/users")
+ */
+router.put('/', validation.validate(options), async function (request, response) {
+
+    try {
+        // Form data
+        const data = request.body;
+
+        // Form validation
+        const errors = validationResult(request);
+        if (!errors.isEmpty()) {
+            return response.status(422).json({
+                errors: errors.array()
+            });
+        }
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, {
+            useNewUrlParser: true
+        });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Generate Password
+        const source = password.generate();
+        const encrypted = CryptoJS.AES.encrypt(source, password.SECRET);
+        const decrypted = CryptoJS.AES.decrypt(encrypted.toString(), password.SECRET);
+
+        // Build User
+        const user = {
+            email: data.email,
+            firstname: data.firstname,
+            lastname: data.lastname,
+            birthdate: data.birthdate,
+            phone: data.phone,
+            location: data.location,
+            password: encrypted.toString(),
+            createdAt: Date.now()
+        };
+
+        // Insert User
+        await col.insertOne(user);
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200).json({
+            code: decrypted.toString(CryptoJS.enc.Utf8),
+            user: user
+        });
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500).json({
+            stacktrace: e.stack
+        });
+    }
+});
+
+/**
+ * @PATCH | update
  *
  * @Route("/users/:id")
  */
@@ -330,7 +217,7 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 });
 
 /**
- * @DELETE | DELETE User
+ * @DELETE | remove
  *
  * @Route("/users/:id")
  */
@@ -369,6 +256,181 @@ router.delete('/:id', async function (request, response) {
         // ... by your error handling middleware
         return response.status(500)
             .json({ stacktrace: e.stack });
+    }
+});
+
+/**
+ * @GET | findAll
+ *
+ * @Route("/users")
+ */
+router.get('/', async function (request, response) {
+
+    try {
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find All Users
+        const users = await col.find().toArray();
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200)
+            .json(users);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
+});
+
+/**
+ * @POST | findBy criteria
+ *
+ * @Route("/users/criteria")
+ */
+router.post('/criteria', async function (request, response) {
+
+    try {
+        // Form data
+        const criteria = request.body;
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find Some Users
+        const users = await col.find(criteria).toArray();
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200)
+            .json(users);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500)
+            .json({ stacktrace: e.stack });
+    }
+});
+
+/**
+ * @POST | findOneBy email
+ *
+ * @Route("/users/login")
+ */
+router.post('/login', async function (request, response) {
+
+    try {
+        // Form data
+        const criteria = request.body;
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, {
+            useNewUrlParser: true
+        });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find User
+        const user = await col.findOne({
+            email: criteria.email
+        });
+        if (user === null) {
+            return response.status(422).json({
+                message: "Utilisateur introuvable"
+            });
+        }
+
+        // Check Password
+        const bytes = CryptoJS.AES.decrypt(user.password, password.SECRET);
+        if (bytes.toString(CryptoJS.enc.Utf8) !== criteria.password) {
+            return response.status(401).json({
+                message: "Mot de passe incorrect"
+            });
+        }
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200).json(user);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500).json({
+            stacktrace: e.stack
+        });
+    }
+});
+
+/**
+ * @GET | findOneBy email (with code)
+ *
+ * @Route("/users/code")
+ */
+router.get('/code', async function (request, response) {
+
+    try {
+        // Form data
+        const criteria = request.body;
+
+        // Connect to MongoDB
+        const client = new MongoCli(MONGODB_URI, {
+            useNewUrlParser: true
+        });
+        await client.connect();
+
+        // Move to database and collection
+        const dbi = client.db(MONGODB_DBNAME);
+        const col = dbi.collection(MONGODB_COLLEC);
+
+        // Find User
+        const user = await col.findOne({
+            email: criteria.email
+        });
+        if (user === null) {
+            return response.status(422).json({
+                message: "Utilisateur introuvable"
+            });
+        }
+
+        // Find Password
+        const bytes = CryptoJS.AES.decrypt(user.password, password.SECRET);
+        user.password = bytes.toString(CryptoJS.enc.Utf8);
+
+        // Close Connection
+        client.close();
+
+        // Response
+        return response.status(200).json(user);
+
+    } catch (e) {
+        // This will eventually be handled
+        // ... by your error handling middleware
+        return response.status(500).json({
+            stacktrace: e.stack
+        });
     }
 });
 

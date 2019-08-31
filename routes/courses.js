@@ -77,7 +77,48 @@ const options = [{
 }];
 
 /**
-* @PUT | CREATE Course
+ * @GET | find
+ *
+ * @Route("/courses/{id}")
+ */
+router.get('/:id', async function (request, response) {
+
+	try {
+		// Identifier
+		const id = request.params.id;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Course
+		const course = await col.findOne({ _id: ObjectId(id) });
+		if (course === null) {
+			return response.status(404)
+				.json({ message: "Parcours introuvable" });
+		}
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(course);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+* @PUT | create
 *
 * @Route("/course")
 */
@@ -136,119 +177,7 @@ router.put('/', validation.validate(options), async function (request, response)
 	});
 
 /**
- * @GET | READ All Courses
- *
- * @Route("/course")
- */
-router.get('/', async function (request, response) {
-  
-	try {
-		// Connect to MongoDB
-		const client = new MongoCli(MONGODB_URI);
-		await client.connect();
-
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
-
-		// Find All Events
-		const courses = await col.find().toArray();
-
-		// Close Connection
-		client.close();
-
-		// Response
-		return response.status(200)
-			.json(courses);
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
-});
-
-/**
- * @GET | READ Some Courses
- *
- * @Route("/courses/criteria")
- */
-router.get('/criteria', async function (request, response) {
-
-	try {
-		// Form data
-		const criteria = request.body;
-
-		// Connect to MongoDB
-		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
-		await client.connect();
-
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
-
-		// Find Some Courses
-		const users = await col.find(criteria).toArray();
-
-		// Close Connection
-		client.close();
-
-		// Response
-		return response.status(200)
-			.json(users);
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
-});
-
-/**
- * @GET | READ Course
- *
- * @Route("/courses/{id}")
- */
-router.get('/:id', async function (request, response) {
-
-	try {
-		// Identifier
-		const id = request.params.id;
-
-		// Connect to MongoDB
-		const client = new MongoCli(MONGODB_URI);
-		await client.connect();
-
-		// Move to database and collection
-		const dbi = client.db(MONGODB_DBNAME);
-		const col = dbi.collection(MONGODB_COLLEC);
-
-		// Find Course
-		const course = await col.findOne({ _id: ObjectId(id) });
-		if (course === null) {
-			return response.status(404)
-				.json({ message: "Parcours introuvable" });
-		}
-
-		// Close Connection
-		client.close();
-
-		// Response
-		return response.status(200)
-			.json(course);
-
-	} catch (e) {
-		// This will eventually be handled
-		// ... by your error handling middleware
-		return response.status(500)
-			.json({ stacktrace: e.stack });
-	}
-});
-
-/**
- * @PATCH | UPDATE Course
+ * @PATCH | update
  *
  * @Route("/courses/:id")
  */
@@ -319,7 +248,7 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 });
 
 /**
- * @DELETE | DELETE Course
+ * @DELETE | remove
  *
  * @Route("/course/:id")
  */
@@ -353,6 +282,77 @@ router.delete('/:id', async function (request, response) {
 		// Response
 		return response.status(200)
 			.json({ message: "Un parcours a été supprimé" });
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @GET | findAll
+ *
+ * @Route("/course")
+ */
+router.get('/', async function (request, response) {
+
+	try {
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI);
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find All Events
+		const courses = await col.find().toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(courses);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
+/**
+ * @POST | findBy criteria
+ *
+ * @Route("/courses/criteria")
+ */
+router.post('/criteria', async function (request, response) {
+
+	try {
+		// Form data
+		const criteria = request.body;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Some Courses
+		const courses = await col.find(criteria).toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(courses);
 
 	} catch (e) {
 		// This will eventually be handled
