@@ -266,7 +266,7 @@ router.get('/', async function (request, response) {
 });
 
 /**
- * @GET | findBy criteria
+ * @POST | findBy criteria
  *
  * @Route("/members/criteria")
  */
