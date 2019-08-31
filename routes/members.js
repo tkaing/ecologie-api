@@ -395,7 +395,7 @@ router.post('/code', async function (request, response) {
         client.close();
 
         // Response
-        return response.status(200).json(user);
+        return response.status(200).json(member);
 
     } catch (e) {
         // This will eventually be handled
