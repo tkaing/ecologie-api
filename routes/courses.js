@@ -362,4 +362,41 @@ router.post('/criteria', async function (request, response) {
 	}
 });
 
+/**
+ * @POST | findBy association
+ *
+ * @Route("/courses/association")
+ */
+router.post('/association', async function (request, response) {
+
+	try {
+		// Form data
+		const idAssociation = request.body;
+
+		// Connect to MongoDB
+		const client = new MongoCli(MONGODB_URI, { useNewUrlParser: true });
+		await client.connect();
+
+		// Move to database and collection
+		const dbi = client.db(MONGODB_DBNAME);
+		const col = dbi.collection(MONGODB_COLLEC);
+
+		// Find Some Courses
+		const courses = await col.find(idAssociation).toArray();
+
+		// Close Connection
+		client.close();
+
+		// Response
+		return response.status(200)
+			.json(courses);
+
+	} catch (e) {
+		// This will eventually be handled
+		// ... by your error handling middleware
+		return response.status(500)
+			.json({ stacktrace: e.stack });
+	}
+});
+
 module.exports = router;
