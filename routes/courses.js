@@ -152,10 +152,10 @@ router.put('/', validation.validate(options), async function (request, response)
 				zip: data.zip,
 				city: data.city,
 				rating: data.rating,
-				glassWaste: data.glassWaste,
-				plasticWaste: data.plasticWaste,
-				foodWaste: data.foodWaste,
-				otherWaste: data.otherWaste,
+				glassWaste: parseInt(data.glassWaste),
+				plasticWaste: parseInt(data.plasticWaste),
+				foodWaste: parseInt(data.foodWaste),
+				otherWaste: parseInt(data.otherWaste),
 				association: data.association,
 				createdAt: Date.now()
 			};
@@ -221,10 +221,10 @@ router.patch('/:id', validation.validate(options), async function (request, resp
 			zip: data.zip,
 			city: data.city,
 			rating: data.rating,
-			glassWaste: data.glassWaste,
-			plasticWaste: data.plasticWaste,
-			foodWaste: data.foodWaste,
-			otherWaste: data.otherWaste,
+			glassWaste: parseInt(data.glassWaste),
+			plasticWaste: parseInt(data.plasticWaste),
+			foodWaste: parseInt(data.foodWaste),
+			otherWaste: parseInt(data.otherWaste),
 			association: data.association
 		};
 
